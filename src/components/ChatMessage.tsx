@@ -13,6 +13,7 @@ import {
   ThumbsDown,
   Edit2,
   MoreHorizontal,
+  AlertCircle,
   Sparkles,
   FileText,
   FileDown,

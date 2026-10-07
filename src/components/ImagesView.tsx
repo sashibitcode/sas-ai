@@ -15,6 +15,8 @@ import {
   Sparkles,
   X,
   Maximize2,
+  Bookmark,
+  ArrowDown,
 } from 'lucide-react';
 import { saveLibraryImage } from '@/lib/libraryStorage';
 
@@ -129,9 +131,12 @@ export default function ImagesView({
   const [thinkMode, setThinkMode] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [generatedResult, setGeneratedResult] = useState<{
     url: string;
     prompt: string;
+    model?: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [chatSent, setChatSent] = useState(false);
@@ -191,15 +196,14 @@ export default function ImagesView({
     }
   };
 
-  // Generate image with FLUX.1
-  const handleGenerate = (customPrompt?: string) => {
+  // Generate image with multi-tier fallback (FLUX.1 -> SDXL Turbo)
+  const handleGenerate = async (customPrompt?: string) => {
     const raw = (customPrompt || promptText).trim();
     if (!raw || isGenerating) return;
 
     setIsGenerating(true);
     setChatSent(false);
 
-    // Apply Think / Prompt enhancement if active
     let finalPrompt = raw;
     if (thinkMode) {
       finalPrompt = `${raw}, masterpiece, hyper-detailed, photorealistic 8k, dramatic cinematic lighting, volumetric atmosphere, unreal engine 5 render style`;
@@ -209,23 +213,71 @@ export default function ImagesView({
 
     const encoded = encodeURIComponent(finalPrompt);
     const seed = Math.floor(Math.random() * 9999999);
-    const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
+    const fluxUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
+    const turboUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&model=turbo`;
 
-    // Automatically save to Library
-    saveLibraryImage({
-      url: imageUrl,
-      prompt: raw,
-      model: 'FLUX.1',
-    });
+    // Preload image so the user never sees a broken/blank box
+    let targetUrl = fluxUrl;
+    let modelName = 'FLUX.1';
+    let isSettled = false;
 
-    setGeneratedResult({
-      url: imageUrl,
-      prompt: raw,
-    });
+    const img = new Image();
 
-    setTimeout(() => {
+    // 6-second timeout fallback to turbo
+    const fallbackTimer = setTimeout(() => {
+      if (!isSettled) {
+        targetUrl = turboUrl;
+        modelName = 'SDXL Turbo';
+        img.src = turboUrl;
+      }
+    }, 6000);
+
+    const finishGeneration = (url: string, model: string) => {
+      if (isSettled) return;
+      isSettled = true;
+      clearTimeout(fallbackTimer);
+
+      saveLibraryImage({
+        url,
+        prompt: raw,
+        model,
+      });
+
+      setGeneratedResult({
+        url,
+        prompt: raw,
+        model,
+      });
+
       setIsGenerating(false);
-    }, 1500);
+    };
+
+    img.onload = () => {
+      finishGeneration(targetUrl, modelName);
+    };
+
+    img.onerror = () => {
+      if (targetUrl !== turboUrl) {
+        targetUrl = turboUrl;
+        modelName = 'SDXL Turbo';
+        img.src = turboUrl;
+      } else {
+        finishGeneration(turboUrl, 'AI Generated');
+      }
+    };
+
+    img.src = fluxUrl;
+  };
+
+  const handleBookmarkToggle = () => {
+    if (!generatedResult) return;
+    saveLibraryImage({
+      url: generatedResult.url,
+      prompt: generatedResult.prompt,
+      model: generatedResult.model || 'FLUX.1',
+    });
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -397,14 +449,35 @@ export default function ImagesView({
           </div>
         </div>
 
+        {/* In-Flight Generation Loading Card */}
+        {isGenerating && (
+          <div className="p-8 rounded-2xl bg-[#121622] border border-[#20b8cd]/30 shadow-2xl flex flex-col items-center justify-center space-y-3 animate-fade-in text-center">
+            <div className="relative">
+              <div className="w-12 h-12 border-2 border-[#20b8cd] border-t-transparent rounded-full animate-spin" />
+              <Sparkles className="w-5 h-5 text-[#20b8cd] absolute inset-0 m-auto animate-pulse" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Synthesizing AI Artwork...</p>
+              <p className="text-xs text-[#8f8f8f] mt-1 italic max-w-lg truncate">
+                "{promptText}"
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-[#20b8cd] bg-[#20b8cd]/10 px-3 py-1 rounded-full border border-[#20b8cd]/25">
+              <span>FLUX.1 High-Resolution Mode</span>
+            </div>
+          </div>
+        )}
+
         {/* Generated Image Result Card (if generated) */}
         {generatedResult && (
           <div className="p-4 rounded-2xl bg-[#121622] border border-[#20b8cd]/30 shadow-2xl space-y-3 animate-fade-in">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#20b8cd]" />
-                <span className="text-xs font-semibold text-white">Generated with FLUX.1</span>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-500/15 text-emerald-300 font-medium border border-emerald-500/25 flex items-center gap-1">
+                <span className="text-xs font-semibold text-white">
+                  Generated with {generatedResult.model || 'FLUX.1'}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 font-medium border border-emerald-500/25 flex items-center gap-1">
                   <Check className="w-2.5 h-2.5" /> Saved to Library
                 </span>
               </div>
@@ -417,12 +490,52 @@ export default function ImagesView({
               </button>
             </div>
 
-            <div className="relative rounded-xl overflow-hidden bg-black/60 border border-white/[0.08] flex items-center justify-center max-h-[460px]">
+            <div
+              onClick={() => setShowPreviewModal(true)}
+              className="group relative rounded-xl overflow-hidden bg-black/60 border border-white/[0.08] flex items-center justify-center max-h-[460px] cursor-pointer"
+            >
               <img
                 src={generatedResult.url}
                 alt={generatedResult.prompt}
-                className="w-full h-auto max-h-[460px] object-contain rounded-xl"
+                className="w-full h-auto max-h-[460px] object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.01]"
               />
+
+              {/* Bookmark button on image top-right */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBookmarkToggle();
+                }}
+                type="button"
+                title="Save to Library"
+                className="absolute top-3 right-3 p-2 rounded-xl bg-black/60 hover:bg-black/85 backdrop-blur-md text-white/90 hover:text-white border border-white/15 transition-all shadow-lg active:scale-95"
+              >
+                {isSaved ? (
+                  <Check className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <Bookmark className="w-4 h-4" />
+                )}
+              </button>
+
+              {/* Download button on image bottom-right */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload();
+                }}
+                type="button"
+                title="Download Image"
+                className="absolute bottom-3 right-3 p-2.5 rounded-full bg-black/65 hover:bg-black/90 backdrop-blur-md text-white border border-white/15 transition-all shadow-lg hover:scale-105 active:scale-95"
+              >
+                <ArrowDown className="w-4 h-4" />
+              </button>
+
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                <span className="px-3 py-1.5 rounded-xl bg-black/70 backdrop-blur-md text-white text-xs font-medium border border-white/20 flex items-center gap-1.5 shadow-lg">
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  <span>Full Preview</span>
+                </span>
+              </div>
             </div>
 
             <p className="text-xs text-[#d4d4d4] italic">
@@ -438,6 +551,24 @@ export default function ImagesView({
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download</span>
+                </button>
+
+                <button
+                  onClick={handleBookmarkToggle}
+                  type="button"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-medium text-white transition-colors"
+                >
+                  {isSaved ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-300">Saved</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bookmark className="w-3.5 h-3.5" />
+                      <span>Bookmark</span>
+                    </>
+                  )}
                 </button>
 
                 <button
@@ -484,6 +615,34 @@ export default function ImagesView({
                   <span>{chatSent ? 'Added to Chat' : 'Open in Chat'}</span>
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Lightbox Modal */}
+        {showPreviewModal && generatedResult && (
+          <div
+            className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/92 backdrop-blur-md animate-fade-in"
+            onClick={() => setShowPreviewModal(false)}
+          >
+            <div
+              className="relative max-w-4xl max-h-[92vh] flex flex-col items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="absolute -top-10 right-0 p-1 text-white/80 hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <img
+                src={generatedResult.url}
+                alt={generatedResult.prompt}
+                className="max-h-[82vh] w-auto max-w-full rounded-2xl shadow-2xl object-contain border border-white/10"
+              />
+              <p className="mt-2 text-xs text-white/80 text-center max-w-xl italic">
+                "{generatedResult.prompt}"
+              </p>
             </div>
           </div>
         )}

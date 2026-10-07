@@ -1,9 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 import { AI_CONFIG, DEFAULT_MODEL, AVAILABLE_MODELS, MODEL_CASCADE } from '@/config/ai';
+import { searchEntityPhotos } from '@/lib/photoSearch';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+async function resolveTargetEntity(
+  messages: Array<{ role: string; content: string }>,
+  apiKey: string
+): Promise<string> {
+  try {
+    const payload = JSON.stringify({
+      model: 'meta/llama-3.2-11b-vision-instruct',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an entity extractor. The user is asking for a photo, image, or picture. Identify the subject based on the conversation history and latest user query. If it is a real person, celebrity, leader, company, place, or object (e.g., "Sam Altman", "Taj Mahal", "Elon Musk", "Narendra Modi"), reply with ONLY the exact name. If it is an imaginative/creative prompt (e.g., "flying car on mars", "cyberpunk cat"), reply with "GENERATE: <prompt>". Reply with ONLY the name or prompt. Do not add any punctuation or explanation.',
+        },
+        ...messages.slice(-6),
+      ],
+      temperature: 0.1,
+      max_tokens: 40,
+    });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+
+    const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: payload,
+      signal: controller.signal,
+    }).catch(() => null);
+
+    clearTimeout(timeout);
+
+    if (res && res.ok) {
+      const data = await res.json().catch(() => null);
+      const text = data?.choices?.[0]?.message?.content?.trim();
+      if (text) return text;
+    }
+  } catch (err) {
+    console.error('Error resolving entity:', err);
+  }
+
+  // Fallback to latest user message content
+  const lastUser = messages.filter((m) => m.role === 'user').pop();
+  return lastUser?.content || '';
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,9 +117,10 @@ export async function POST(req: NextRequest) {
 
       const enhancedPrompt = `${userPrompt}, highly detailed, photorealistic 8k, cinematic lighting, masterpiece`;
       const encodedPrompt = encodeURIComponent(enhancedPrompt);
-      const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&model=flux`;
+      const seed = Math.floor(Math.random() * 9999999);
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
 
-      const responseText = `### 🎨 AI Generated Image (FLUX.1)\n\n![${userPrompt}](${imageUrl})\n\n**Prompt**: *"${userPrompt}"*\n**Model**: FLUX.1 (1024x1024 High-Resolution)\n\nAap upar bani photo ko seedha **Download** button se save kar sakte hain! Agar koi specific changes chahiye toh batayein.`;
+      const responseText = `### 🎨 AI Generated Image (FLUX.1)\n\n![${userPrompt}](${imageUrl})\n\n**Prompt**: *"${userPrompt}"*\n**Model**: FLUX.1 (1024x1024 High-Resolution)\n\nAap upar bani photo ko seedha **Bookmark** se Library mein save kar sakte hain ya **Download** button se save kar sakte hain! Agar koi specific changes chahiye toh batayein.`;
 
       return new Response(responseText, {
         headers: {
@@ -91,7 +141,7 @@ export async function POST(req: NextRequest) {
       /(?:shashikant|creator|developer|maker|owner).*(?:photo|image|tasveer|pic|picture)|(?:photo|image|tasveer|pic|picture).*(?:shashikant|creator|developer|maker|owner)/i.test(userContent);
 
     if (isCreatorPhotoQuery) {
-      const responseText = `### 👨‍💻 SHASHIKANT RAJ (sashibitcode) — Creator & Developer\n\n![SHASHIKANT RAJ (sashibitcode) - Creator & Developer of SAS AI](/shashikant-raj.jpg)\n\n**Name**: SHASHIKANT RAJ\n**Role**: Lead AI Engineer & Developer\n**Handle**: sashibitcode\n\nYe rahe mere creator **SHASHIKANT RAJ**! Unhone hi mujhe (SAS AI) develop, design aur train kiya hai. Aap upar di gayi official photo ko **Download** button par click karke save kar sakte hain! 🚀`;
+      const responseText = `### 👨‍💻 SHASHIKANT RAJ (sashibitcode) — Creator & Developer\n\n![SHASHIKANT RAJ (sashibitcode) - Creator & Developer of SAS AI](/shashikant-raj.jpg)\n\n**Name**: SHASHIKANT RAJ\n**Role**: Lead AI Engineer & Developer\n**Handle**: sashibitcode\n\nYe rahe mere creator **SHASHIKANT RAJ**! Unhone hi mujhe (SAS AI) develop, design aur train kiya hai. Aap upar di gayi official photo ko **Bookmark** se Library mein save kar sakte hain ya **Download** button se save kar sakte hain! 🚀`;
 
       return new Response(responseText, {
         headers: {
@@ -103,25 +153,60 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. SPECIFIC INTENT: Direct Image / Photo Generation Request in natural language
-    const isDirectPhotoRequest =
-      /^(?:mujhe\s+)?(?:ek\s+)?(?:photo|image|tasveer|picture)\s+(?:banao|dikhao|generate\s+karo|chahiye)|(?:generate|create|draw)\s+(?:an?\s+)?(?:image|photo|picture)/i.test(userContent) ||
-      /(?:ki\s+)?(?:photo|image|tasveer)\s+(?:generate\s+karke\s+do|banao|bana\s+do|chahiye)/i.test(userContent);
+    // 2. SPECIFIC INTENT: Contextual & Direct Photo / Image Request
+    // Handles "photo do uska", "uski photo", "iska photo do", "photo dikhao", "photo do", "Sam Altman photo", "generate image of [X]"
+    const isPhotoQuery =
+      /(?:photo|image|tasveer|picture|pic|photu)\s*(?:do|dikhao|banao|chahiye|de|bana|generate|send|le|dikhaye|lao)|(?:do|dikhao|banao|generate|send|show|give|fetch|find)\s*(?:an?\s+)?(?:photo|image|tasveer|picture|pic)|(?:photo\s+do\s+uska|uska\s+photo|uski\s+photo|iski\s+photo|inka\s+photo|unki\s+photo|iska\s+photo\s+do|unki\s+tasveer|uska\s+tasveer)/i.test(userContent) ||
+      /^(?:mujhe\s+)?(?:ek\s+)?(?:photo|image|tasveer|picture)\s+(?:banao|dikhao|generate\s+karo|chahiye)|^(?:generate|create|draw)\s+(?:an?\s+)?(?:image|photo|picture)/i.test(userContent) ||
+      /(?:ki|ka)\s+(?:photo|image|tasveer|pic)\s*(?:do|dikhao|banao|chahiye)?$/i.test(userContent) ||
+      /^(?:photo|tasveer|image|pic)\s*(?:do|dikhao|chahiye)?$/i.test(userContent);
 
-    if (isDirectPhotoRequest) {
-      let cleanSubject = userContent
-        .replace(/^(?:mujhe\s+)?(?:ek\s+)?(?:photo|image|tasveer|picture)\s+(?:banao|dikhao|generate\s+karo|chahiye)[:\s]*/i, '')
-        .replace(/(?:ki\s+)?(?:photo|image|tasveer)\s+(?:generate\s+karke\s+do|banao|bana\s+do|chahiye)/i, '')
-        .replace(/^(?:generate|create|draw)\s+(?:an?\s+)?(?:image|photo|picture)\s+(?:of\s+)?/i, '')
-        .trim();
+    if (isPhotoQuery) {
+      // Intelligently resolve the entity from chat context (e.g. "Sam Altman" from previous message)
+      const resolvedSubject = await resolveTargetEntity(validMessages, apiKey);
+      const isAiCreative = /^GENERATE:/i.test(resolvedSubject) || /(?:draw|banao|fantasy|anime|cyberpunk|robot|spacesuit|alien)/i.test(resolvedSubject);
 
-      if (!cleanSubject || cleanSubject.length < 2) cleanSubject = userContent;
+      if (!isAiCreative && resolvedSubject && resolvedSubject.length >= 2) {
+        // Real-world person, landmark, place, company, or object
+        const cleanEntity = resolvedSubject.replace(/^(?:photo of|image of|picture of)\s*/i, '').trim();
+        const photos = await searchEntityPhotos(cleanEntity, 3);
 
-      const enhancedPrompt = `${cleanSubject}, highly detailed, photorealistic 8k, cinematic lighting, masterpiece visual`;
+        if (photos.length > 0) {
+          const galleryJson = JSON.stringify({
+            title: cleanEntity,
+            images: photos.map((p) => p.url),
+            captions: photos.map((p) => p.title),
+            source: 'Verified Wikimedia / Wikipedia Photographs',
+          });
+
+          // Hidden markdown images so conversation harvest saves them to Library
+          const hiddenMarkdown = photos
+            .map((p) => `![${p.title}](${p.url})`)
+            .join('\n');
+
+          const responseText = `### 📸 Photographs: **${cleanEntity}**\n\n:::gallery\n${galleryJson}\n:::\n\n${hiddenMarkdown}\n\nYe rahe **${cleanEntity}** ke authentic high-resolution photographs! Aap kisi bhi photo par click karke full-screen zoom preview dekh sakte hain, **Bookmark** button se Library mein save kar sakte hain, ya circular **Download** button se save kar sakte hain. 🚀`;
+
+          return new Response(responseText, {
+            headers: {
+              'Content-Type': 'text/plain; charset=utf-8',
+              'X-Model-Used': 'entity-photo-search',
+              'X-RateLimit-Limit': rateLimit.limit.toString(),
+              'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            },
+          });
+        }
+      }
+
+      // Creative AI generation or fallback if entity photos weren't found
+      let promptToUse = resolvedSubject.replace(/^GENERATE:\s*/i, '').trim();
+      if (!promptToUse || promptToUse.length < 2) promptToUse = userContent;
+
+      const enhancedPrompt = `${promptToUse}, highly detailed, photorealistic 8k, cinematic lighting, masterpiece visual`;
       const encoded = encodeURIComponent(enhancedPrompt);
-      const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&model=flux`;
+      const seed = Math.floor(Math.random() * 9999999);
+      const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
 
-      const responseText = `### 🎨 AI Generated Image (FLUX.1)\n\n![${cleanSubject}](${imageUrl})\n\n**Prompt**: *"${cleanSubject}"*\n**Model**: FLUX.1 High-Resolution (1024x1024)\n\nAapki mangi hui photo generate ho chuki hai! Aap ise **Download** button se save kar sakte hain. Agar isme koi aur badlaav ya nayi tasveer chahiye toh batayein!`;
+      const responseText = `### 🎨 AI Generated Image (FLUX.1)\n\n![${promptToUse}](${imageUrl})\n\n**Prompt**: *"${promptToUse}"*\n**Model**: FLUX.1 High-Resolution (1024x1024)\n\nAapki mangi hui photo generate ho chuki hai! Aap ise **Bookmark** button se Library mein save kar sakte hain ya circular **Download** button se download kar sakte hain.`;
 
       return new Response(responseText, {
         headers: {

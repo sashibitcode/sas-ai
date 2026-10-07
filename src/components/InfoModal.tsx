@@ -14,14 +14,14 @@ export default function InfoModal({ type, onClose, onSelectPrompt }: InfoModalPr
   if (!type) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-fade-in">
       <div
-        className="relative w-full max-w-md bg-[#202020] border border-[#2e2e2d] rounded-2xl p-6 text-[#ececec] shadow-2xl animate-slide-up"
+        className="relative w-full max-w-md bg-[#202020] border border-[#2e2e2d] rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-[#ececec] shadow-2xl animate-slide-up max-h-[92dvh] overflow-y-auto pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-[#8f8f8f] hover:text-[#ececec] hover:bg-[#2c2c2c] transition-colors"
+          className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 sm:p-1.5 rounded-lg text-[#8f8f8f] hover:text-[#ececec] hover:bg-[#2c2c2c] transition-colors active:scale-95 shrink-0"
         >
           <X className="w-4 h-4" />
         </button>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Conversation } from '@/lib/types';
 import SasAiWordmark from './SasAiWordmark';
+import UserAccountMenu from './UserAccountMenu';
 import {
   Search,
   Bell,
@@ -43,6 +44,10 @@ interface SidebarProps {
   onOpenLibrary?: () => void;
   onOpenImageStudio?: () => void;
   currentView?: 'chat' | 'images';
+  onOpenProfile?: () => void;
+  onOpenSettings?: () => void;
+  onOpenHelp?: () => void;
+  onLogout?: () => void;
 }
 
 // Geometric woven asterisk icon matching Perplexity's logo
@@ -83,6 +88,10 @@ export default function Sidebar({
   onOpenLibrary,
   onOpenImageStudio,
   currentView = 'chat',
+  onOpenProfile,
+  onOpenSettings,
+  onOpenHelp,
+  onLogout,
 }: SidebarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,6 +102,7 @@ export default function Sidebar({
   const [editTitle, setEditTitle] = useState('');
   const [currentUser, setCurrentUser] = useState<{ username: string; email: string; provider: string } | null>(null);
   const [libraryCount, setLibraryCount] = useState(0);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   useEffect(() => {
     const loadUser = () => {
@@ -173,8 +183,8 @@ export default function Sidebar({
 
       {/* Sidebar Drawer Container */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 flex flex-col w-[240px] h-full bg-[#060910]/85 backdrop-blur-2xl border-r border-white/[0.06] transition-transform duration-200 ease-in-out select-none text-[#ececec] ${
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        className={`fixed md:static inset-y-0 left-0 z-50 flex flex-col w-[82vw] max-w-[280px] md:w-[240px] h-full bg-[#060910]/95 md:bg-[#060910]/85 backdrop-blur-2xl border-r border-white/[0.06] transition-transform duration-200 ease-in-out select-none text-[#ececec] pt-safe ${
+          isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
         } ${!isOpen ? 'md:hidden' : 'md:flex'}`}
       >
         {/* Top Header: Brand & Action Icons */}
@@ -194,7 +204,7 @@ export default function Sidebar({
               onClick={onToggleOpen}
               type="button"
               title="Collapse sidebar"
-              className="p-1.5 rounded-md hover:text-[#ececec] hover:bg-[#252525] transition-colors"
+              className="p-2 sm:p-1.5 rounded-xl hover:text-[#ececec] hover:bg-[#252525] transition-colors active:scale-95"
             >
               <PanelLeftClose className="w-4 h-4" />
             </button>
@@ -410,40 +420,78 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Bottom Section: Sign In / Account */}
-        <div className="p-3 border-t border-white/[0.06]">
+        {/* Bottom Section: Sign In / Interactive Account Menu */}
+        <div className="relative p-3 pb-safe border-t border-white/[0.06]">
           {currentUser ? (
-            <div className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-[#ececec] bg-white/[0.03] border border-white/[0.06]">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#1fd5f0] to-[#3b82f6] flex items-center justify-center text-white text-[11px] font-bold shrink-0 shadow-sm">
-                  {((currentUser.username || 'U').trim().charAt(0) || 'U').toUpperCase()}
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-semibold text-[#ececec] truncate" title={currentUser.username || 'User'}>
-                    {currentUser.username || 'User'}
-                  </span>
-                  {currentUser.email && (
-                    <span className="text-[10px] text-[#737373] truncate">
-                      {currentUser.email}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  try {
-                    localStorage.removeItem('sas_user');
-                    window.dispatchEvent(new Event('storage'));
-                  } catch {}
-                  setCurrentUser(null);
+            <>
+              {/* User Account Popover Menu (bottom-up placement) */}
+              <UserAccountMenu
+                isOpen={isUserMenuOpen}
+                onClose={() => setIsUserMenuOpen(false)}
+                user={currentUser}
+                onOpenProfile={() => {
+                  setIsUserMenuOpen(false);
+                  onOpenProfile?.();
                 }}
+                onOpenSettings={() => {
+                  setIsUserMenuOpen(false);
+                  if (onOpenSettings) onOpenSettings();
+                  else onOpenCustomise?.();
+                }}
+                onOpenHelp={() => {
+                  setIsUserMenuOpen(false);
+                  onOpenHelp?.();
+                }}
+                onLogout={() => {
+                  setIsUserMenuOpen(false);
+                  if (onLogout) {
+                    onLogout();
+                  } else {
+                    try {
+                      localStorage.removeItem('sas_user');
+                      window.dispatchEvent(new Event('storage'));
+                    } catch {}
+                    setCurrentUser(null);
+                  }
+                }}
+                placement="bottom-up"
+                className="mb-2 left-1 right-1 w-auto"
+              />
+
+              <button
                 type="button"
-                className="p-1 text-[#737373] hover:text-[#f87171] transition-colors rounded hover:bg-white/[0.05]"
-                title="Log out"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-[#ececec] transition-all group ${
+                  isUserMenuOpen
+                    ? 'bg-white/[0.1] border border-white/[0.15] shadow-lg'
+                    : 'bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.06]'
+                }`}
+                title="Account menu (Profile, Settings, Help, Log out)"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#1fd5f0] to-[#3b82f6] flex items-center justify-center text-white text-[11px] font-bold shrink-0 shadow-sm">
+                    {((currentUser.username || 'U').trim().charAt(0) || 'U').toUpperCase()}
+                  </div>
+                  <div className="flex flex-col text-left min-w-0">
+                    <span className="text-xs font-semibold text-[#ececec] truncate" title={currentUser.username || 'User'}>
+                      {currentUser.username || 'User'}
+                    </span>
+                    {currentUser.email && (
+                      <span className="text-[10px] text-[#737373] truncate">
+                        {currentUser.email}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="p-1 rounded text-[#737373] group-hover:text-white transition-colors">
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      isUserMenuOpen ? 'rotate-180 text-[#20b8cd]' : ''
+                    }`}
+                  />
+                </div>
               </button>
-            </div>
+            </>
           ) : (
             <button
               onClick={onOpenAuthModal}

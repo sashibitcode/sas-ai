@@ -151,31 +151,31 @@ export default function LibraryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
       <div
-        className="relative flex flex-col w-full max-w-5xl h-[88vh] max-h-[850px] bg-[#090d19]/95 border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden text-[#ececec]"
+        className="relative flex flex-col w-full max-w-5xl h-[94dvh] sm:h-[88vh] max-h-[850px] bg-[#090d19]/95 border border-white/[0.08] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden text-[#ececec]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] bg-white/[0.02]">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-[#20b8cd]/20 to-[#3b82f6]/20 border border-[#20b8cd]/30 text-[#20b8cd]">
+        <div className="flex items-center justify-between px-3.5 sm:px-5 py-3 sm:py-4 border-b border-white/[0.06] bg-white/[0.02]">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-[#20b8cd]/20 to-[#3b82f6]/20 border border-[#20b8cd]/30 text-[#20b8cd] shrink-0">
               <Files className="w-5 h-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-white">Universal Library</h2>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#20b8cd]/15 text-[#20b8cd] font-semibold border border-[#20b8cd]/25">
+                <h2 className="text-sm sm:text-base font-semibold text-white truncate">Universal Library</h2>
+                <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-[#20b8cd]/15 text-[#20b8cd] font-semibold border border-[#20b8cd]/25 shrink-0">
                   {items.length} {items.length === 1 ? 'item' : 'items'}
                 </span>
               </div>
-              <p className="text-xs text-[#8f8f8f]">
-                Images, PDFs, Documents, Code aur Data Files — sab yahan automatically save hoti hain
+              <p className="text-[11px] sm:text-xs text-[#8f8f8f] truncate max-w-xs sm:max-w-none">
+                Images, PDFs, Documents, Code files — auto saved
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {items.length > 0 && (
               <>
                 {confirmClear ? (
@@ -186,15 +186,15 @@ export default function LibraryModal({
                         clearLibrary();
                         setConfirmClear(false);
                       }}
-                      className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white font-medium text-[11px]"
+                      className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white font-medium text-[11px] active:scale-95"
                     >
-                      Yes, Clear
+                      Yes
                     </button>
                     <button
                       onClick={() => setConfirmClear(false)}
                       className="px-1.5 py-0.5 text-[#8f8f8f] hover:text-white text-[11px]"
                     >
-                      Cancel
+                      No
                     </button>
                   </div>
                 ) : (
@@ -202,7 +202,7 @@ export default function LibraryModal({
                     onClick={() => setConfirmClear(true)}
                     type="button"
                     title="Clear Library"
-                    className="p-1.5 rounded-lg text-[#737373] hover:text-red-400 hover:bg-white/[0.04] transition-colors"
+                    className="p-2 sm:p-1.5 rounded-lg text-[#737373] hover:text-red-400 hover:bg-white/[0.04] transition-colors active:scale-95"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -213,7 +213,7 @@ export default function LibraryModal({
             <button
               onClick={onClose}
               type="button"
-              className="p-1.5 rounded-lg text-[#8f8f8f] hover:text-white hover:bg-white/[0.06] transition-colors"
+              className="p-2 sm:p-1.5 rounded-lg text-[#8f8f8f] hover:text-white hover:bg-white/[0.06] transition-colors active:scale-95"
             >
               <X className="w-5 h-5" />
             </button>
@@ -221,13 +221,13 @@ export default function LibraryModal({
         </div>
 
         {/* Filter Tabs & Search Row */}
-        <div className="px-5 py-3 border-b border-white/[0.04] bg-black/20 flex flex-col sm:flex-row items-center justify-between gap-3">
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto scrollbar-none">
+        <div className="px-3.5 sm:px-5 py-2.5 sm:py-3 border-b border-white/[0.04] bg-black/20 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3">
+          {/* Category Tabs (Horizontal Scroll on Mobile) */}
+          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto no-scrollbar shrink-0 pb-0.5 sm:pb-0">
             <button
               onClick={() => setActiveTab('all')}
               type="button"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 active:scale-95 ${
                 activeTab === 'all'
                   ? 'bg-white/[0.1] text-white border border-white/[0.12] shadow-sm'
                   : 'text-[#8f8f8f] hover:text-white hover:bg-white/[0.04]'
@@ -242,7 +242,7 @@ export default function LibraryModal({
             <button
               onClick={() => setActiveTab('image')}
               type="button"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 active:scale-95 ${
                 activeTab === 'image'
                   ? 'bg-pink-500/15 text-pink-300 border border-pink-500/30 shadow-sm'
                   : 'text-[#8f8f8f] hover:text-white hover:bg-white/[0.04]'
@@ -258,14 +258,14 @@ export default function LibraryModal({
             <button
               onClick={() => setActiveTab('pdf')}
               type="button"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 active:scale-95 ${
                 activeTab === 'pdf'
                   ? 'bg-red-500/15 text-red-300 border border-red-500/30 shadow-sm'
                   : 'text-[#8f8f8f] hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               <FileText className="w-3.5 h-3.5 text-red-400" />
-              <span>PDFs & Docs</span>
+              <span>PDFs</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/[0.06] font-mono">
                 {countByType.pdf}
               </span>
@@ -274,14 +274,14 @@ export default function LibraryModal({
             <button
               onClick={() => setActiveTab('code')}
               type="button"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 active:scale-95 ${
                 activeTab === 'code'
                   ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30 shadow-sm'
                   : 'text-[#8f8f8f] hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               <Code2 className="w-3.5 h-3.5 text-blue-400" />
-              <span>Code & Files</span>
+              <span>Code</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/[0.06] font-mono">
                 {countByType.code}
               </span>
@@ -296,7 +296,7 @@ export default function LibraryModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search library..."
-              className="w-full pl-8 pr-4 py-1.5 text-xs rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-[#737373] focus:outline-none focus:border-[#20b8cd]/60 focus:ring-1 focus:ring-[#20b8cd]/30"
+              className="w-full pl-8 pr-4 py-1.5 text-[15px] sm:text-xs rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-[#737373] focus:outline-none focus:border-[#20b8cd]/60 focus:ring-1 focus:ring-[#20b8cd]/30"
             />
             {searchQuery && (
               <button
@@ -310,7 +310,7 @@ export default function LibraryModal({
         </div>
 
         {/* Content Body Grid */}
-        <div className="flex-1 overflow-y-auto p-5 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 scrollbar-thin pb-safe">
           {items.length === 0 ? (
             /* Empty State */
             <div className="flex flex-col items-center justify-center h-full text-center py-12 px-4 max-w-md mx-auto">

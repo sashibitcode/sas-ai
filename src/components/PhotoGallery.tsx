@@ -126,8 +126,8 @@ export default function PhotoGallery({ photos, title }: PhotoGalleryProps) {
             )}
           </button>
 
-          {/* Bottom title pill on hover */}
-          <div className="absolute bottom-3 left-3 max-w-[70%] px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-[11px] text-[#e0e0e0] truncate opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Bottom title pill (visible on mobile, hover on desktop) */}
+          <div className="absolute bottom-3 left-3 max-w-[70%] px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-[11px] text-[#e0e0e0] truncate opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             {mainPhoto.title}
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function PhotoGallery({ photos, title }: PhotoGalleryProps) {
                     onClick={(e) => handleSaveToLibrary(photo, photoIdx, e)}
                     type="button"
                     title={savedIndexes[photoIdx] ? 'Saved to Library!' : 'Save to Library'}
-                    className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/60 hover:bg-black/85 backdrop-blur-md text-white/90 hover:text-white border border-white/15 transition-all opacity-0 group-hover:opacity-100"
+                    className="absolute top-2.5 right-2.5 p-2 sm:p-1.5 rounded-lg bg-black/60 hover:bg-black/85 backdrop-blur-md text-white/90 hover:text-white border border-white/15 transition-all opacity-90 sm:opacity-0 sm:group-hover:opacity-100 active:scale-95"
                   >
                     {savedIndexes[photoIdx] ? (
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -169,13 +169,13 @@ export default function PhotoGallery({ photos, title }: PhotoGalleryProps) {
                     onClick={(e) => handleDownload(photo, photoIdx, e)}
                     type="button"
                     title="Download Photo"
-                    className="absolute bottom-2.5 right-2.5 p-1.5 rounded-full bg-black/65 hover:bg-black/90 backdrop-blur-md text-white border border-white/15 transition-all opacity-0 group-hover:opacity-100"
+                    className="absolute bottom-2.5 right-2.5 p-2 sm:p-1.5 rounded-full bg-black/65 hover:bg-black/90 backdrop-blur-md text-white border border-white/15 transition-all opacity-90 sm:opacity-0 sm:group-hover:opacity-100 active:scale-95"
                   >
                     <ArrowDown className="w-3.5 h-3.5" />
                   </button>
 
-                  {/* Caption on hover */}
-                  <div className="absolute bottom-2.5 left-2.5 max-w-[65%] px-2 py-0.5 rounded bg-black/60 backdrop-blur-md text-[10px] text-[#e0e0e0] truncate opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Caption */}
+                  <div className="absolute bottom-2.5 left-2.5 max-w-[65%] px-2 py-0.5 rounded bg-black/60 backdrop-blur-md text-[10px] text-[#e0e0e0] truncate opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     {photo.title}
                   </div>
                 </div>

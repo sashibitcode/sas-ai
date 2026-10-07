@@ -64,7 +64,27 @@ export default function ChatInput({
   const [activeSearchMode, setActiveSearchMode] = useState(SEARCH_MODES[0]);
   const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [sendKeyMode, setSendKeyMode] = useState<'enter' | 'cmd_enter'>('enter');
   const searchMenuRef = useRef<HTMLDivElement>(null);
+
+  // Sync sendKey preference
+  useEffect(() => {
+    const loadSendKey = () => {
+      try {
+        const saved = localStorage.getItem('sas_send_key');
+        if (saved === 'cmd_enter' || saved === 'enter') {
+          setSendKeyMode(saved);
+        }
+      } catch {}
+    };
+    loadSendKey();
+    window.addEventListener('storage', loadSendKey);
+    window.addEventListener('sas_settings_changed', loadSendKey);
+    return () => {
+      window.removeEventListener('storage', loadSendKey);
+      window.removeEventListener('sas_settings_changed', loadSendKey);
+    };
+  }, []);
 
   // Auto resize textarea height based on content
   useEffect(() => {
@@ -194,10 +214,20 @@ export default function ChatInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (!isLoading && (input.trim() || selectedImage)) {
-        onSend();
+    if (sendKeyMode === 'cmd_enter') {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!isLoading && (input.trim() || selectedImage)) {
+          onSend();
+        }
+      }
+      // Enter without Ctrl/Cmd inserts a newline as standard
+    } else {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!isLoading && (input.trim() || selectedImage)) {
+          onSend();
+        }
       }
     }
   };
@@ -259,17 +289,17 @@ export default function ChatInput({
           onPaste={handlePaste}
           placeholder={
             selectedModel === 'flux-image-gen'
-              ? 'Describe the image to generate (e.g. Cyberpunk samurai in neon rain)...'
+              ? 'Describe image to generate (e.g. Cyberpunk samurai in neon rain)...'
               : 'Message SAS AI...'
           }
-          className="w-full bg-transparent resize-none text-[#ececec] placeholder-[#6e6e6e] text-sm md:text-[15px] focus:outline-none min-h-[44px] leading-relaxed scrollbar-thin px-2 pt-1"
+          className="w-full bg-transparent resize-none text-[#ececec] placeholder-[#6e6e6e] text-[16px] sm:text-[15px] focus:outline-none min-h-[44px] leading-relaxed scrollbar-thin px-2 pt-1"
         />
       </div>
 
       {/* Bottom Controls Row inside the Card */}
-      <div className="flex items-center justify-between pt-1.5 border-t border-transparent mt-0.5 select-none">
-        {/* Left Side: + (attach), Search ⌵, Computer */}
-        <div className="flex items-center gap-1 text-[#8f8f8f]">
+      <div className="flex items-center justify-between pt-1.5 border-t border-transparent mt-0.5 select-none gap-1">
+        {/* Left Side: + (attach), Search ⌵, Computer, Image */}
+        <div className="flex items-center gap-0.5 sm:gap-1 text-[#8f8f8f] min-w-0">
           {/* Hidden File Input */}
           <input
             ref={fileInputRef}
@@ -284,7 +314,7 @@ export default function ChatInput({
             onClick={() => fileInputRef.current?.click()}
             type="button"
             title="Attach image or file"
-            className="p-1.5 rounded-lg text-[#8f8f8f] hover:text-[#ececec] hover:bg-white/[0.06] transition-colors"
+            className="p-2 sm:p-1.5 rounded-lg text-[#8f8f8f] hover:text-[#ececec] hover:bg-white/[0.06] transition-colors shrink-0 active:scale-95"
           >
             <Plus className="w-4 h-4 stroke-[2]" />
           </button>
@@ -294,10 +324,10 @@ export default function ChatInput({
             <button
               onClick={() => setIsSearchMenuOpen(!isSearchMenuOpen)}
               type="button"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[#a0a0a0] hover:text-[#ececec] hover:bg-white/[0.06] transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-medium text-[#a0a0a0] hover:text-[#ececec] hover:bg-white/[0.06] transition-colors shrink-0 active:scale-95"
             >
-              <ActiveSearchIcon className="w-3.5 h-3.5 text-[#8f8f8f]" />
-              <span>{activeSearchMode.label}</span>
+              <ActiveSearchIcon className="w-3.5 h-3.5 text-[#8f8f8f] shrink-0" />
+              <span className="hidden xs:inline">{activeSearchMode.label}</span>
               <ChevronDown
                 className={`w-3 h-3 text-[#707070] transition-transform duration-200 ${
                   isSearchMenuOpen ? 'rotate-180' : ''
@@ -306,7 +336,7 @@ export default function ChatInput({
             </button>
 
             {isSearchMenuOpen && (
-              <div className="absolute left-0 bottom-full mb-2 w-56 rounded-xl border border-white/[0.08] bg-[#0c101a]/95 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] p-1 z-50 text-[#ececec] animate-slide-up">
+              <div className="absolute left-0 bottom-full mb-2 w-56 max-w-[calc(100vw-32px)] rounded-xl border border-white/[0.08] bg-[#0c101a]/95 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] p-1 z-50 text-[#ececec] animate-slide-up">
                 <div className="px-2.5 py-1 text-[10px] font-semibold text-[#737373] uppercase tracking-wider">
                   Focus Mode
                 </div>
@@ -321,7 +351,7 @@ export default function ChatInput({
                         setIsSearchMenuOpen(false);
                       }}
                       type="button"
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 transition-colors text-xs ${
+                      className={`w-full text-left px-2.5 py-2 sm:py-1.5 rounded-lg flex items-center gap-2.5 transition-colors text-xs active:bg-white/[0.1] ${
                         isSelected
                           ? 'bg-white/[0.08] text-[#ececec]'
                           : 'hover:bg-white/[0.05] text-[#a0a0a0] hover:text-[#ececec]'
@@ -342,10 +372,11 @@ export default function ChatInput({
           <button
             onClick={() => onComputerToggle?.()}
             type="button"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[#a0a0a0] hover:text-[#ececec] hover:bg-white/[0.06] transition-colors"
+            title="Computer & Code Assistant"
+            className="p-2 sm:px-2.5 sm:py-1 rounded-lg text-xs font-medium text-[#a0a0a0] hover:text-[#ececec] hover:bg-white/[0.06] transition-colors shrink-0 active:scale-95 flex items-center gap-1.5"
           >
             <Monitor className="w-3.5 h-3.5 text-[#8f8f8f]" />
-            <span className="hidden sm:inline">Computer</span>
+            <span className="hidden md:inline">Computer</span>
           </button>
 
           {/* Dedicated Image Gen Studio Button */}
@@ -353,15 +384,15 @@ export default function ChatInput({
             onClick={() => onOpenImageStudio?.()}
             type="button"
             title="Open AI Image Studio (FLUX.1)"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-pink-400 hover:text-pink-300 hover:bg-pink-500/10 transition-colors"
+            className="p-2 sm:px-2.5 sm:py-1 rounded-lg text-xs font-medium text-pink-400 hover:text-pink-300 hover:bg-pink-500/10 transition-colors shrink-0 active:scale-95 flex items-center gap-1.5"
           >
             <Palette className="w-3.5 h-3.5 text-pink-400" />
-            <span className="hidden sm:inline">Image</span>
+            <span className="hidden md:inline">Image</span>
           </button>
         </div>
 
         {/* Right Side: Model ⌵, Mic, Submit/Audio action */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Model Selector */}
           <ModelSelector
             selectedModel={selectedModel}
@@ -373,7 +404,7 @@ export default function ChatInput({
             onClick={handleToggleVoice}
             type="button"
             title={isListening ? 'Listening... click to stop' : 'Voice input'}
-            className={`p-1.5 rounded-lg transition-colors ${
+            className={`p-2 sm:p-1.5 rounded-lg transition-colors active:scale-95 ${
               isListening
                 ? 'text-red-400 bg-red-950/40 animate-pulse'
                 : 'text-[#8f8f8f] hover:text-[#ececec] hover:bg-white/[0.06]'
@@ -388,7 +419,7 @@ export default function ChatInput({
               onClick={onStop}
               type="button"
               title="Stop generating"
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/80 hover:bg-red-500 text-white transition-all shadow-md active:scale-95"
+              className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-red-500/80 hover:bg-red-500 text-white transition-all shadow-md active:scale-95 shrink-0"
             >
               <Square className="w-3.5 h-3.5 fill-white" />
             </button>
@@ -396,8 +427,8 @@ export default function ChatInput({
             <button
               onClick={() => onSend()}
               type="button"
-              title="Send message"
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1d4ed8] hover:bg-blue-600 text-white shadow-md transition-all active:scale-95"
+              title={sendKeyMode === 'cmd_enter' ? 'Send message (Ctrl / ⌘ + Enter)' : 'Send message (Enter)'}
+              className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-[#1d4ed8] hover:bg-blue-600 text-white shadow-md transition-all active:scale-95 shrink-0"
             >
               <ArrowUp className="w-4 h-4 stroke-[2.4]" />
             </button>
@@ -406,7 +437,7 @@ export default function ChatInput({
               disabled
               type="button"
               title="Type a message to send"
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.06] text-[#555555] cursor-not-allowed transition-colors"
+              className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-white/[0.06] text-[#555555] cursor-not-allowed transition-colors shrink-0"
             >
               <ArrowUp className="w-4 h-4 stroke-[2]" />
             </button>

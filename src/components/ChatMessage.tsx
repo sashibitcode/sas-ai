@@ -17,6 +17,8 @@ import {
   Sparkles,
   FileText,
   FileDown,
+  Lock,
+  User,
 } from 'lucide-react';
 import { saveLibraryItem } from '@/lib/libraryStorage';
 import { exportDocumentAsPdf } from '@/lib/fileExport';
@@ -26,6 +28,7 @@ interface ChatMessageProps {
   isStreaming?: boolean;
   onRewrite?: (content: string) => void;
   onEdit?: (messageId: string, newContent: string) => void;
+  onOpenAuthModal?: () => void;
 }
 
 export default function ChatMessage({
@@ -33,6 +36,7 @@ export default function ChatMessage({
   isStreaming = false,
   onRewrite,
   onEdit,
+  onOpenAuthModal,
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<boolean | null>(null);
@@ -80,7 +84,7 @@ export default function ChatMessage({
   // ==========================================
   if (isUser) {
     return (
-      <div className="flex flex-col items-end w-full group animate-fade-in">
+      <div className="chat-message-container flex flex-col items-end w-full group animate-fade-in">
         {/* User image thumbnail if attached */}
         {message.image && (
           <div className="mb-2 rounded-xl overflow-hidden border border-white/10 max-w-xs shadow-md">
@@ -96,12 +100,12 @@ export default function ChatMessage({
 
         {isEditing ? (
           /* Inline edit mode */
-          <div className="w-full max-w-[85%] sm:max-w-[70%] bg-[#0c162d] border border-blue-500/40 rounded-2xl p-3 shadow-lg">
+          <div className="w-full max-w-[92%] sm:max-w-[70%] bg-[#0c162d] border border-blue-500/40 rounded-2xl p-3 shadow-lg">
             <textarea
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               rows={3}
-              className="w-full bg-transparent text-white text-[15px] resize-none focus:outline-none leading-relaxed"
+              className="w-full bg-transparent text-white text-[16px] sm:text-[15px] resize-none focus:outline-none leading-relaxed"
               autoFocus
             />
             <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-white/10">
@@ -111,14 +115,14 @@ export default function ChatMessage({
                   setIsEditing(false);
                 }}
                 type="button"
-                className="px-3 py-1 rounded-lg text-xs font-medium text-[#a0a0a0] hover:text-white hover:bg-white/10 transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium text-[#a0a0a0] hover:text-white hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
                 type="button"
-                className="px-3 py-1 rounded-lg text-xs font-medium bg-[#1d4ed8] hover:bg-blue-600 text-white transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1d4ed8] hover:bg-blue-600 text-white transition-colors"
               >
                 Save & Submit
               </button>
@@ -126,20 +130,20 @@ export default function ChatMessage({
           </div>
         ) : (
           /* Standard User Message Bubble */
-          <div className="relative max-w-[85%] sm:max-w-[70%] bg-[#1d4ed8]/90 hover:bg-[#1d4ed8] text-white px-4 py-2.5 rounded-2xl rounded-br-sm shadow-sm border border-blue-400/20 text-[15px] leading-relaxed break-words transition-colors">
+          <div className="chat-message-bubble relative max-w-[88%] sm:max-w-[70%] bg-[#1d4ed8]/90 hover:bg-[#1d4ed8] text-white px-3.5 sm:px-4 py-2.5 rounded-2xl rounded-br-sm shadow-sm border border-blue-400/20 text-[15px] leading-relaxed break-words transition-colors">
             <p className="whitespace-pre-wrap select-text">{message.content}</p>
           </div>
         )}
 
-        {/* User Message Action Toolbar (Subtle, Right-Aligned) */}
+        {/* User Message Action Toolbar (Clearly visible on mobile, hover on desktop) */}
         {!isEditing && (
-          <div className="flex items-center gap-1 mt-1 text-[#737373] select-none opacity-80 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 mt-1 text-[#737373] select-none opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             {/* Copy */}
             <button
               onClick={handleCopy}
               type="button"
               title={copied ? 'Copied' : 'Copy'}
-              className="p-1 rounded hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 sm:p-1 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors active:scale-95"
             >
               {copied ? (
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -153,7 +157,7 @@ export default function ChatMessage({
               onClick={handleShare}
               type="button"
               title="Share"
-              className="p-1 rounded hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 sm:p-1 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors active:scale-95"
             >
               <Share2 className="w-3.5 h-3.5" />
             </button>
@@ -164,7 +168,7 @@ export default function ChatMessage({
                 onClick={() => setIsEditing(true)}
                 type="button"
                 title="Edit message"
-                className="p-1 rounded hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors"
+                className="p-1.5 sm:p-1 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors active:scale-95"
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
@@ -179,8 +183,8 @@ export default function ChatMessage({
   // 2. AI MESSAGE (LEFT SIDE, PURE NATURAL TEXT)
   // ==========================================
   return (
-    <div className="flex flex-col items-start w-full group animate-fade-in">
-      {/* Small subtle Model / Attribution Label above response */}
+    <div className="chat-message-container flex flex-col items-start w-full group animate-fade-in">
+      {/* Brand Label above response */}
       <div className="flex items-center gap-1.5 text-[11px] text-[#737373] mb-1.5 select-none font-medium">
         <img
           src="/logo.png"
@@ -188,10 +192,6 @@ export default function ChatMessage({
           className="w-3.5 h-3.5 object-contain"
         />
         <span className="text-[#a0a0a0] font-semibold">SAS AI</span>
-        <span>·</span>
-        <span>Synthesis</span>
-        <span>·</span>
-        <span className="text-[#808080]">NVIDIA NIM</span>
       </div>
 
       {/* Error State */}
@@ -205,9 +205,32 @@ export default function ChatMessage({
         </div>
       ) : (
         /* Natural AI Markdown Content (No enclosing box, No card) */
-        <div className="max-w-[850px] w-full text-[#EDEDED] text-[15px] sm:text-[16px] leading-[1.65] font-normal">
+        <div className="chat-message-bubble max-w-[850px] w-full text-[#EDEDED] text-[15px] sm:text-[16px] leading-[1.65] font-normal">
           {message.content ? (
-            <MarkdownRenderer content={message.content} />
+            <>
+              <MarkdownRenderer content={message.content} />
+              {message.content.includes('Sign In Required') && onOpenAuthModal && (
+                <div className="mt-3.5 p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 via-[#101728] to-blue-950/40 border border-blue-500/30 shadow-xl max-w-lg">
+                  <div className="flex items-center gap-2.5 text-white font-semibold text-sm mb-1.5">
+                    <div className="w-7 h-7 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                      <Lock className="w-3.5 h-3.5" />
+                    </div>
+                    <span>Sign In to Unlock Unlimited Access</span>
+                  </div>
+                  <p className="text-xs text-[#a3a3a3] mb-3 leading-relaxed">
+                    Aapne free guest limit (2 chats) poori kar li hai. Bina kisi rukavat ke chat continue karne ke liye abhi Sign In karein!
+                  </p>
+                  <button
+                    onClick={onOpenAuthModal}
+                    type="button"
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white hover:bg-[#ededed] text-black font-semibold text-xs transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>Sign In Now (Google / Apple / Email)</span>
+                  </button>
+                </div>
+              )}
+            </>
           ) : isStreaming ? (
             /* Subtle typing indicator */
             <div className="flex items-center gap-2 py-2 text-xs text-[#8f8f8f]">
@@ -225,15 +248,15 @@ export default function ChatMessage({
         </div>
       )}
 
-      {/* Subtle Action Toolbar below AI Response (Left-Aligned) */}
+      {/* Action Toolbar below AI Response (Visible on mobile, hover on desktop) */}
       {!message.error && message.content && !isStreaming && (
-        <div className="relative flex items-center gap-1 mt-2 text-[#737373] text-xs select-none opacity-80 group-hover:opacity-100 transition-opacity">
+        <div className="relative flex items-center flex-wrap gap-1 mt-2 text-[#737373] text-xs select-none opacity-85 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           {/* Copy */}
           <button
             onClick={handleCopy}
             type="button"
             title={copied ? 'Copied' : 'Copy'}
-            className="p-1.5 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors"
+            className="p-2 sm:p-1.5 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors active:scale-95"
           >
             {copied ? (
               <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -260,7 +283,7 @@ export default function ChatMessage({
             }}
             type="button"
             title="Download as PDF & Save to Library"
-            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-[#a0a0a0] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 sm:px-2 sm:py-1 rounded-md text-[11px] text-[#a0a0a0] hover:text-white hover:bg-white/[0.06] transition-colors active:scale-95"
           >
             {savedAsPdf ? (
               <>
@@ -280,7 +303,7 @@ export default function ChatMessage({
             onClick={() => setLiked(liked === true ? null : true)}
             type="button"
             title="Good response"
-            className={`p-1.5 rounded-md transition-colors ${
+            className={`p-2 sm:p-1.5 rounded-md transition-colors active:scale-95 ${
               liked === true
                 ? 'text-emerald-400 bg-emerald-950/30'
                 : 'hover:text-[#e5e5e5] hover:bg-white/[0.06]'
@@ -294,7 +317,7 @@ export default function ChatMessage({
             onClick={() => setLiked(liked === false ? null : false)}
             type="button"
             title="Bad response"
-            className={`p-1.5 rounded-md transition-colors ${
+            className={`p-2 sm:p-1.5 rounded-md transition-colors active:scale-95 ${
               liked === false
                 ? 'text-red-400 bg-red-950/30'
                 : 'hover:text-[#e5e5e5] hover:bg-white/[0.06]'
@@ -308,7 +331,7 @@ export default function ChatMessage({
             onClick={handleShare}
             type="button"
             title="Share"
-            className="p-1.5 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors"
+            className="p-2 sm:p-1.5 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors active:scale-95"
           >
             <Share2 className="w-3.5 h-3.5" />
           </button>
@@ -319,7 +342,7 @@ export default function ChatMessage({
               onClick={() => onRewrite(message.content)}
               type="button"
               title="Regenerate response"
-              className="p-1.5 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors"
+              className="p-2 sm:p-1.5 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors active:scale-95"
             >
               <RotateCw className="w-3.5 h-3.5" />
             </button>
@@ -331,31 +354,37 @@ export default function ChatMessage({
               onClick={() => setShowMoreMenu(!showMoreMenu)}
               type="button"
               title="More options"
-              className="p-1.5 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors"
+              className="p-2 sm:p-1.5 rounded-md hover:text-[#e5e5e5] hover:bg-white/[0.06] transition-colors active:scale-95"
             >
               <MoreHorizontal className="w-3.5 h-3.5" />
             </button>
 
             {showMoreMenu && (
-              <div
-                onMouseLeave={() => setShowMoreMenu(false)}
-                className="absolute left-0 bottom-full mb-1.5 w-44 rounded-xl border border-white/[0.08] bg-[#0c101a]/95 backdrop-blur-2xl shadow-xl p-1 z-30 text-xs text-[#d4d4d4] animate-slide-up"
-              >
-                <button
-                  onClick={() => {
-                    handleCopy();
-                    setShowMoreMenu(false);
-                  }}
-                  type="button"
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] hover:text-white transition-colors"
+              <>
+                <div
+                  className="fixed inset-0 z-20 sm:hidden"
+                  onClick={() => setShowMoreMenu(false)}
+                />
+                <div
+                  onMouseLeave={() => setShowMoreMenu(false)}
+                  className="absolute left-0 bottom-full mb-1.5 w-44 rounded-xl border border-white/[0.08] bg-[#0c101a]/95 backdrop-blur-2xl shadow-xl p-1 z-30 text-xs text-[#d4d4d4] animate-slide-up"
                 >
-                  Copy Markdown
-                </button>
-                <div className="my-1 border-t border-white/[0.06]" />
-                <div className="px-2.5 py-1 text-[10px] text-[#737373]">
-                  Model: Llama 3.2 NIM
+                  <button
+                    onClick={() => {
+                      handleCopy();
+                      setShowMoreMenu(false);
+                    }}
+                    type="button"
+                    className="w-full text-left px-2.5 py-2 sm:py-1.5 rounded-lg hover:bg-white/[0.06] hover:text-white transition-colors active:bg-white/[0.1]"
+                  >
+                    Copy Markdown
+                  </button>
+                  <div className="my-1 border-t border-white/[0.06]" />
+                  <div className="px-2.5 py-1 text-[10px] text-[#737373]">
+                    Model: Llama 3.2 NIM
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>

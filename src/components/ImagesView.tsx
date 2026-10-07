@@ -322,14 +322,14 @@ export default function ImagesView({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#0a0d14] text-[#ececec] scrollbar-thin select-none">
-      <div className="max-w-5xl mx-auto w-full px-4 sm:px-8 py-6 space-y-6">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#0a0d14] text-[#ececec] scrollbar-thin select-none pb-safe">
+      <div className="max-w-5xl mx-auto w-full px-3.5 sm:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Top Navigation Row */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-safe">
           <button
             onClick={onBackToChat}
             type="button"
-            className="flex items-center gap-2 text-xs font-medium text-[#8f8f8f] hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/[0.04]"
+            className="flex items-center gap-2 text-xs font-medium text-[#8f8f8f] hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/[0.04] active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Chat</span>
@@ -338,7 +338,7 @@ export default function ImagesView({
           <button
             onClick={onOpenLibrary}
             type="button"
-            className="flex items-center gap-1.5 text-xs font-medium text-[#20b8cd] hover:text-[#52e2f4] transition-colors px-3 py-1.5 rounded-xl bg-[#20b8cd]/10 border border-[#20b8cd]/20 hover:bg-[#20b8cd]/15"
+            className="flex items-center gap-1.5 text-xs font-medium text-[#20b8cd] hover:text-[#52e2f4] transition-colors px-3 py-1.5 rounded-xl bg-[#20b8cd]/10 border border-[#20b8cd]/20 hover:bg-[#20b8cd]/15 active:scale-95"
           >
             <ImagesIcon className="w-3.5 h-3.5" />
             <span>My Library</span>
@@ -347,7 +347,7 @@ export default function ImagesView({
 
         {/* Title: Images */}
         <div>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-white">
             Images
           </h1>
         </div>
@@ -355,7 +355,7 @@ export default function ImagesView({
         {/* Pill-Shaped Main Input Box (Matching Screenshot) */}
         <div className="relative">
           <div
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#161a24] border transition-all shadow-xl ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#161a24] border transition-all shadow-xl ${
               promptText
                 ? 'border-[#20b8cd]/50 shadow-[0_0_24px_rgba(32,184,205,0.15)]'
                 : 'border-white/[0.08] hover:border-white/[0.15]'
@@ -364,12 +364,11 @@ export default function ImagesView({
             {/* + Button on the left */}
             <button
               onClick={() => {
-                // Focus input and add trigger word
                 if (inputRef.current) inputRef.current.focus();
               }}
               type="button"
               title="Add image details"
-              className="p-1.5 rounded-full text-[#8f8f8f] hover:text-white hover:bg-white/[0.08] transition-colors shrink-0"
+              className="p-1.5 rounded-full text-[#8f8f8f] hover:text-white hover:bg-white/[0.08] transition-colors shrink-0 active:scale-95"
             >
               <Plus className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
             </button>
@@ -382,7 +381,7 @@ export default function ImagesView({
               onChange={(e) => setPromptText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Describe a new image"
-              className="flex-1 bg-transparent text-sm sm:text-[15px] text-white placeholder-[#6f7686] focus:outline-none min-w-0"
+              className="flex-1 bg-transparent text-[16px] sm:text-[15px] text-white placeholder-[#6f7686] focus:outline-none min-w-0"
             />
 
             {/* Trailing Controls: Think, Mic, Send Button */}

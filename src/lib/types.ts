@@ -5,6 +5,7 @@ export interface Message {
   image?: string; // base64 data URL
   createdAt: number;
   error?: boolean;
+  modelUsed?: string;
 }
 
 export interface Conversation {

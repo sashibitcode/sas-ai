@@ -12,9 +12,19 @@ export const DEVELOPER_INFO = {
 /**
  * Dynamic Multi-Model Cascade for Chat & Vision
  */
-export const MODEL_CASCADE = [
+export const GEMINI_CASCADE = [
+  'gemini-flash-lite-latest',
+  'gemini-3.1-flash-lite-preview',
+];
+
+export const NVIDIA_CASCADE = [
   'meta/llama-3.2-11b-vision-instruct',
   'meta/llama-3.2-90b-vision-instruct',
+];
+
+export const MODEL_CASCADE = [
+  ...GEMINI_CASCADE,
+  ...NVIDIA_CASCADE,
 ];
 
 export const DEFAULT_MODEL = 'auto';
@@ -22,10 +32,16 @@ export const DEFAULT_MODEL = 'auto';
 export const AVAILABLE_MODELS: ModelOption[] = [
   {
     id: 'auto',
-    name: 'Auto (Dynamic)',
-    description: 'Smart auto-switch: fast Llama 3.2 chat + auto image generation',
+    name: 'Auto (Gemini + Failover)',
+    description: 'Primary Google Gemini engine with automatic failover to NVIDIA NIM Llama 3.2',
     badge: 'Recommended',
     isDefault: true,
+  },
+  {
+    id: 'gemini-flash',
+    name: 'Google Gemini (Primary)',
+    description: "Google's flagship multimodal intelligence with high speed & vision",
+    badge: 'Primary AI',
   },
   {
     id: 'flux-image-gen',
@@ -35,13 +51,13 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   },
   {
     id: 'meta/llama-3.2-11b-vision-instruct',
-    name: 'Llama 3.2 11B (Text & Vision)',
-    description: 'Instant & ultra-responsive model for Hindi, Hinglish & English chat',
-    badge: 'Super Fast',
+    name: 'Llama 3.2 11B (NVIDIA NIM)',
+    description: 'Meta Llama 3.2 via NVIDIA NIM inference engine (Text & Vision)',
+    badge: 'NVIDIA NIM',
   },
   {
     id: 'meta/llama-3.2-90b-vision-instruct',
-    name: 'Llama 3.2 90B (Heavy Reasoning)',
+    name: 'Llama 3.2 90B (Flagship)',
     description: "Meta's flagship 90B model for deep reasoning & complex problems",
     badge: 'Flagship 90B',
   },

@@ -176,25 +176,25 @@ export default function ImageStudioModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
       <div
-        className="relative flex flex-col w-full max-w-3xl max-h-[90vh] bg-[#090e1c]/95 border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden text-[#ececec]"
+        className="relative flex flex-col w-full max-w-3xl max-h-[94dvh] sm:max-h-[90vh] bg-[#090e1c]/95 border border-white/[0.08] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden text-[#ececec]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-white/[0.02]">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/30 text-pink-400">
+        <div className="flex items-center justify-between px-3.5 sm:px-5 py-3 sm:py-3.5 border-b border-white/[0.06] bg-white/[0.02]">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/30 text-pink-400 shrink-0">
               <Palette className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-white">AI Image Studio</h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-300 font-semibold border border-pink-500/30">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className="text-sm sm:text-base font-semibold text-white truncate">AI Image Studio</h2>
+                <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-300 font-semibold border border-pink-500/30 shrink-0">
                   FLUX.1 Schnell
                 </span>
               </div>
-              <p className="text-xs text-[#8f8f8f]">
+              <p className="text-[11px] sm:text-xs text-[#8f8f8f] truncate max-w-xs sm:max-w-none">
                 Prompt likhein aur instant high-resolution AI visual generate karein
               </p>
             </div>
@@ -203,14 +203,14 @@ export default function ImageStudioModal({
           <button
             onClick={onClose}
             type="button"
-            className="p-1.5 rounded-lg text-[#8f8f8f] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="p-2 sm:p-1.5 rounded-lg text-[#8f8f8f] hover:text-white hover:bg-white/[0.06] transition-colors shrink-0 active:scale-95"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 scrollbar-thin pb-safe">
           {/* Prompt Input Section */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
@@ -221,7 +221,7 @@ export default function ImageStudioModal({
               <button
                 onClick={handleSurpriseMe}
                 type="button"
-                className="flex items-center gap-1 text-[11px] text-pink-400 hover:text-pink-300 font-medium transition-colors"
+                className="flex items-center gap-1 text-[11px] text-pink-400 hover:text-pink-300 font-medium transition-colors active:scale-95"
               >
                 <Wand2 className="w-3 h-3" />
                 <span>🎲 Surprise Me</span>
@@ -232,9 +232,9 @@ export default function ImageStudioModal({
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe your vision (e.g. Cyberpunk samurai warrior standing in neon rain, 8k cinematic masterpiece)..."
+                placeholder="Describe your vision (e.g. Cyberpunk samurai warrior in neon rain)..."
                 rows={3}
-                className="w-full p-3 text-xs sm:text-sm rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-[#6e6e6e] focus:outline-none focus:border-pink-500/60 focus:ring-1 focus:ring-pink-500/30 resize-none leading-relaxed"
+                className="w-full p-3 text-[16px] sm:text-sm rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-[#6e6e6e] focus:outline-none focus:border-pink-500/60 focus:ring-1 focus:ring-pink-500/30 resize-none leading-relaxed"
               />
             </div>
           </div>

@@ -244,25 +244,31 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Creative AI generation fallback
-      let promptToUse = resolvedSubject.replace(/^GENERATE:\s*/i, '').trim();
-      if (!promptToUse || promptToUse.length < 2) promptToUse = userContent;
+      // Only generate AI image if user clearly asked to create/draw/generate an image
+      const isExplicitImageGen =
+        isAiCreative ||
+        /(?:banao|generate|create|draw|paint|design)/i.test(userContent);
 
-      const enhancedPrompt = `${promptToUse}, highly detailed, photorealistic 8k, cinematic lighting, masterpiece visual`;
-      const encoded = encodeURIComponent(enhancedPrompt);
-      const seed = Math.floor(Math.random() * 9999999);
-      const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
+      if (isExplicitImageGen) {
+        let promptToUse = resolvedSubject.replace(/^GENERATE:\s*/i, '').trim();
+        if (!promptToUse || promptToUse.length < 2) promptToUse = userContent;
 
-      const responseText = `### 🎨 AI Generated Image (FLUX.1)\n\n![${promptToUse}](${imageUrl})\n\n**Prompt**: *"${promptToUse}"*\n**Model**: FLUX.1 High-Resolution (1024x1024)\n\nAapki mangi hui photo generate ho chuki hai! Aap ise **Bookmark** button se Library mein save kar sakte hain ya circular **Download** button se download kar sakte hain.`;
+        const enhancedPrompt = `${promptToUse}, highly detailed, photorealistic 8k, cinematic lighting, masterpiece visual`;
+        const encoded = encodeURIComponent(enhancedPrompt);
+        const seed = Math.floor(Math.random() * 9999999);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
 
-      return new Response(responseText, {
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-          'X-Model-Used': 'flux-image-gen',
-          'X-RateLimit-Limit': rateLimit.limit.toString(),
-          'X-RateLimit-Remaining': rateLimit.remaining.toString(),
-        },
-      });
+        const responseText = `### 🎨 AI Generated Image (FLUX.1)\n\n![${promptToUse}](${imageUrl})\n\n**Prompt**: *"${promptToUse}"*\n**Model**: FLUX.1 High-Resolution (1024x1024)\n\nAapki mangi hui photo generate ho chuki hai! Aap ise **Bookmark** button se Library mein save kar sakte hain ya circular **Download** button se download kar sakte hain.`;
+
+        return new Response(responseText, {
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'X-Model-Used': 'flux-image-gen',
+            'X-RateLimit-Limit': rateLimit.limit.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+          },
+        });
+      }
     }
 
     let systemPrompt = AI_CONFIG.systemPrompt;
